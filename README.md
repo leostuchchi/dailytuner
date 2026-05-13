@@ -1,370 +1,328 @@
-# Daily Tuner Project
-
-Проект ежедневных персонализированных рекоммендаций, состоящий из нескольких интегрированных модулей расчетов:
-
-Джйотиш
-Натальная карта
-Биоритмы
-Психоматрица
-
-## Зачем это нужно
-
-Бывают разные дни в нашей жизни.
-
-Иногда случается что, запланированному на день не суждено случиться. И только вечером понимаешь, что можно было просто отдохнуть и невыходить из дома.
-
-А бывают дни, когда даже без составления плана на день, ты можешь сделать очень многое, буквально "Свернуть Горы"
-
-Почему так происходит? От чего это зависит?
-Мы не знаем ответов на эти вопросы.
-
-Результаты расчетов, данного приложения, попытка ответить на данные вопросы.
-И дать возможность пользователю, скорректировать свой день, для максимальной продуктивности в определенных областях деятельности, или запланировать отдых. 
-
-Мы очень надеемся, что наше приложение поможет пользователям. Жить в согласии с пока еще, нам неизвестным.
-
-
-## 🎯 Общее описание
-
-**Daily Tuner** — это комплексная система, которая анализирует персональные данные пользователя (биоритмы, астрологические аспекты, психометрию) и генерирует персонализированные рекомендации на каждый день. 
-
-## 🏗️ Архитектура
-
-Проект построен по микросервисной архитектуре с использованием Docker Compose:
-
-### Основные компоненты
-
-| Компонент | Назначение | Порт | Технологии |
-|-----------|------------|------|------------|
-| **PostgreSQL** | Основная база данных | 5432 | PostgreSQL 15, расширения |
-| **Backend API** | Основной API для расчетов | 8000 | FastAPI, SQLAlchemy, asyncpg |
-| **Web UI** | Веб-интерфейс для пользователей | 8080 | FastAPI, HTML/CSS/JS |
-| **Grafana** | Мониторинг и визуализация | 3001 | Grafana 10.4.0 |
-| **Cron Backup** | Автоматическое резервное копирование | - | PostgreSQL, cron |
-
-### Стек технологий
-
-- **Backend**: Python 3.11+, FastAPI, SQLAlchemy, asyncpg
-- **База данных**: PostgreSQL 15 с расширениями (pgcrypto, pg_trgm, uuid-ossp)
-- **Контейнеризация**: Docker, Docker Compose
-- **ML/AI**: Интеграция с Mistral для генерации персональной ежедневной притчи/рассказа (в процессе)
-- **Мониторинг**: Grafana, системные метрики
-- **Безопасность**: Docker secrets, шифрование паролей
-
-## 📁 Структура проекта
-
-```
-assistant-project/
-├── app/                          # Исходный код приложений
-│   ├── backend/                  # Backend API (FastAPI)
-│   │   ├── calculators/          # Калькуляторы (биоритмы, матрицы, натальная карта, джйотиш)
-│   │   ├── config/               # Конфигурации
-│   │   ├── database/             # Модели и миграции БД
-│   │   ├── forecast/             # Прогнозирование
-│   │   ├── magic/                # Magic профили
-│   │   ├── services/             # Бизнес-логика
-│   │   ├── users/                # Управление пользователями
-│   │   └── assistant_api.py      # Основной API
-│   ├── web/                      # Веб-интерфейс
-│   │   ├── web_api.py            # Веб API
-│   │   ├── web_client.py         # Клиент для backend
-│   │   └── __init__.py
-│   ├── requirements-*.txt        # Зависимости для компонентов
-│   └── Dockerfile.*              # Dockerfile для компонентов
-├── docker-secrets/               # Секреты Docker (генерируются автоматически)
-├── initscripts/                  # Скрипты инициализации БД
-│   └── init_db.sql               # SQL для создания структуры БД
-├── monitoring/                   # Конфигурация мониторинга
-├── scripts/                      # Вспомогательные скрипты
-├── backups/                      # Резервные копии БД (генерируются)
-├── docker-compose.yml           # Основная конфигурация Docker Compose
-├── Makefile                     # Управление проектом
-├── bash_start.sh                # Скрипт запуска
-└── README.md                    # Эта документация
-```
-
-## 🚀 Быстрый старт
-
-### Предварительные требования
-
-- Docker 20.10+
-- Docker Compose 2.0+
-- Make (опционально, но рекомендуется)
-- 4 ГБ свободной оперативной памяти
-- 10 ГБ свободного места на диске
-
-### Полный запуск (рекомендуемый способ)
-
-```bash
-# Клонирование репозитория (если еще не сделано)
-git clone <repository-url>
-cd assistant-project
-
-# создание файлов секретов (паролей)
-make secrets
-
-# Полный запуск всей инфраструктуры
-make up
-```
-
-Команда `make up` выполняет:
-1. Генерацию секретов (пароли, API ключи)
-2. Инициализацию базы данных
-3. Запуск всех сервисов в Docker
-4. Проверку статуса системы
-
-### Альтернативный запуск
-
-```bash
-# Только генерация секретов
-make secrets
-
-# Запуск сервисов
-docker compose up -d
-
-# Проверка статуса
-make status
-```
-
-## 🔧 Управление проектом
-
-### Основные команды Makefile
-
-```bash
-# Основные команды
-make up           # Полный запуск (секреты + инициализация + сервисы)
-make down         # Остановка сервисов (БД сохраняется)
-make status       # Показать статус сервисов и URL
-make validate     # Проверить целостность БД и сервисов
-
-# Управление секретами
-make secrets      # Сгенерировать новые секреты
-make rotate-secrets # Ротация паролей (без простоя)
-
-# Резервное копирование
-make backup       # Создать резервную копию БД
-
-# Мониторинг
-make logs         # Просмотр логов всех сервисов
-make logs-app     # Просмотр логов только приложения
-
-# Автоматизация
-make cron-setup   # Установить cron задачи (резервное копирование, ротация)
-```
-
-### Доступ к сервисам
-
-После запуска сервисы доступны по следующим адресам:
-
-- **Grafana (мониторинг)**: http://localhost:3001
-  - Логин: `admin` / Пароль: `admin` (изменить при первом входе)
-- **Backend API (документация)**: http://localhost:8000/docs
-- **Web UI (веб-интерфейс)**: http://localhost:8080
-- **PostgreSQL (база данных)**: localhost:5432
-  - База данных: `personalassistant`
-  - Пользователь: `postgres`
-  - Пароль: сгенерирован автоматически (см. `docker-secrets/postgrespassword.txt`)
-
-## 📊 База данных
-
-### Структура БД
-
-Проект использует PostgreSQL 15 со следующей структурой:
-
-**Основные таблицы:**
-- `users` — пользователи системы
-- `user_profiles` — профили пользователей с данными для расчетов
-- `natal_charts` — натальные астрологические карты
-- `psyho_matrices` — психоматрицы (квадрат Пифагора)
-- `biorhythms` — расчеты биоритмов
-- `magic_profiles` — интегрированные психологические профили
-- `optimal_activities` — рекомендации оптимальных активностей
-- `recommendations` — итоговые персонализированные рекомендации
-- `psychological_tests` — результаты психологических тестов
-
-**Вспомогательные таблицы:**
-- `daily_forecast_cache` — кэш ежедневных прогнозов
-- `forecast_feedback` — обратная связь по прогнозам
-- `system_audit_log` — логи аудита
-- `calculation_cache` — кэш расчетов
-- `system_metrics` — системные метрики
-
-### Инициализация БД
-
-При первом запуске автоматически выполняется скрипт `initscripts/init_db.sql`, который:
-1. Создает все необходимые таблицы
-2. Настраивает индексы для производительности
-3. Создает представления для мониторинга
-4. Настраивает права доступа для приложения
-
-## 🔌 API Документация
-
-### Основные эндпоинты Backend API
-
-Backend API доступен по адресу `http://localhost:8000` с документацией Swagger по адресу `http://localhost:8000/docs`.
-
-**Основные группы эндпоинтов:**
-
-#### 1. Управление пользователями
-- `POST /api/v1/user/profile` — создание/обновление профиля
-- `GET /api/v1/user/profile` — получение профиля
-- `GET /api/v1/user/validate` — проверка полноты данных профиля
-
-#### 2. Рекомендации
-- `POST /api/v1/optimal-activities` — получение оптимальных активностей на день
-- `GET /api/v1/activities/descriptions` — описание типов активностей
-- `GET /api/v1/forecast` — получение прогноза на указанную дату
-
-#### 3. Обратная связь
-- `POST /api/v1/forecast/feedback` — отправка обратной связи о точности прогноза
-
-### Аутентификация API
-
-Все API эндпоинты защищены API ключом. Ключ передается в заголовке:
-```
-X-API-Key: <ваш_api_ключ>
-```
-
-API ключ генерируется автоматически при выполнении `make secrets` и сохраняется в `docker-secrets/backend-api-key.txt`.
-
-
-## 🌐 Веб-интерфейс
-
-Веб-интерфейс доступен по адресу `http://localhost:8080` и предоставляет:
-
-1. **Регистрация/вход** по email или телефону
-2. **Управление профилем** — ввод данных для расчетов
-3. **Получение рекомендаций** — персонализированные советы на день
-4. **Проверка профиля** — проверка полноты данных
-
-## 🔒 Безопасность
-
-### Управление секретами
-
-Проект использует Docker secrets для безопасного хранения конфиденциальных данных:
-
-- Пароли генерируются автоматически при первом запуске
-- Секреты хранятся в файлах с правами `600`
-- Ротация паролей выполняется командой `make rotate-secrets`
-- API ключи и токены передаются через секреты, а не переменные окружения
-
-### Рекомендации для production
-
-1. **Измените пароли Grafana** после первого входа
-2. **Настройте SSL/TLS** для внешнего доступа
-3. **Ограничьте доступ** к портам 5432 (PostgreSQL) и 3001 (Grafana)
-4. **Настройте брандмауэр** для защиты сервисов
-5. **Регулярно обновляйте** зависимости и базовые образы
-
-## 📈 Мониторинг и администрирование
-
-### Grafana Dashboard
-
-Grafana предоставляет дашборды для мониторинга:
-
-1. **Системные метрики** — использование CPU, памяти, диска
-2. **Метрики БД** — активные подключения, производительность запросов
-3. **Метрики пользователей** — активные пользователи, новые регистрации
-4. **ML метрики** — производительность моделей машинного обучения
-
-### Резервное копирование
-
-Автоматическое резервное копирование настраивается через cron:
-
-```bash
-# Установка автоматических задач
-make cron-setup
-```
-
-Задачи cron:
-- **Ежедневно в 3:00** — резервное копирование БД (`make backup`)
-- **Каждое воскресенье в 4:00** — ротация секретов (`make rotate-secrets`)
-
-Резервные копии хранятся в директории `backups/` с retention 7 дней.
-
-## 🐛 Устранение неполадок
-
-### Распространенные проблемы
-
-**Проблема**: Сервисы не запускаются
-```bash
-# Проверьте логи
-make logs
-
-# Проверьте статус
-docker compose ps
-
-# Перезапустите сервисы
-docker compose down
-make up
-```
-
-**Проблема**: Ошибки подключения к БД
-```bash
-# Проверьте доступность PostgreSQL
-docker exec pa-postgres pg_isready
-
-# Проверьте логи PostgreSQL
-docker compose logs postgres
-```
-
-**Проблема**: API возвращает ошибки 401
-```bash
-# Проверьте API ключ
-cat docker-secrets/backend-api-key.txt
-
-# Обновите секреты
-make rotate-secrets
-```
-
-### Проверка работоспособности
-
-```bash
-# Полная проверка системы
-make validate
-
-# Проверка здоровья API
-curl -f http://localhost:8000/health
-
-# Проверка здоровья веб-интерфейса
-curl -f http://localhost:8080/health
-```
-
-## 📋 Требования к системе
-
-### Минимальные требования
-- **CPU**: 2 ядра
-- **RAM**: 4 ГБ
-- **Disk**: 20 ГБ SSD
-- **OS**: Linux, macOS, Windows (с WSL2)
-
-### Рекомендуемые требования для production
-- **CPU**: 4 ядра (2 для PostgreSQL, 2 для приложений)
-- **RAM**: 8 ГБ (4 ГБ для PostgreSQL, 4 ГБ для приложений)
-- **Disk**: 50 ГБ SSD (для БД и резервных копий)
-- **Network**: 100 Mbps
-
-## 🔄 Обновление проекта
-
-```bash
-# Остановка сервисов
-make down
-
-# Обновление кода
-git pull origin main
-
-# Пересборка образов
-docker compose build --no-cache
-
-# Запуск обновленной версии
-make up
-```
-
-## 📄 Лицензия
-
-leostuchchi
-
+```markdown
+# Daily Tuner — Daily personalized recommendations
+
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/docker-compose-2496ED.svg)](https://www.docker.com/)
+[![Python](https://img.shields.io/badge/python-3.11+-3776AB.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688.svg)](https://fastapi.tiangolo.com/)
+[![Status](https://img.shields.io/badge/status-active-brightgreen.svg)]()
+
+Daily Tuner is a modular system that computes personalized daily recommendations using integrated calculation modules: **Jyotish** (Vedic astrology), **natal chart**, **biorhythms**, and **psychomatrix** (Pythagorean square). The goal is to help users align their day with personal rhythms and tendencies so they can choose to rest or push for high-productivity tasks.
 
 ---
 
-**Примечание**: Этот README обновлен в соответствии с текущим состоянием проекта в ветке `main`. Для получения актуальной информации всегда обращайтесь к документации в репозитории.
+## 📋 Table of Contents
+- [Why this exists](#why-this-exists)
+- [High-level description](#high-level-description)
+- [Architecture](#architecture)
+- [Project structure](#project-structure)
+- [Quick start](#quick-start)
+- [Management commands](#management-commands-makefile)
+- [Service endpoints](#service-endpoints-and-access)
+- [Database](#database)
+- [Monitoring & backups](#monitoring--backups)
+- [Security](#security)
+- [Troubleshooting](#troubleshooting)
+- [System requirements](#system-requirements)
+- [Updating](#updating-the-project)
+- [License](#license)
+
+---
+
+## Why this exists
+
+Life has different kinds of days: sometimes plans fail and rest would have been better, and sometimes you can accomplish extraordinary things without planning. 
+
+**Daily Tuner** tries to explain those differences by combining several personal models and to give actionable, daily guidance so users can optimize their day for productivity, creativity, or rest.
+
+## High-level description
+
+Daily Tuner analyzes user data (birth date/time/location, daily date, psychomatrix inputs) to produce targeted daily recommendations across work, creativity, relationships, and rest. Recommendations are generated by combining outputs from multiple calculators and presented via API and web UI.
+
+## Architecture
+
+The project uses a microservice-style layout orchestrated with Docker Compose.
+
+### Main components
+
+| Component | Purpose | Port | Technology |
+|-----------|---------|------|-------------|
+| **PostgreSQL** | Primary database | 5432 | PostgreSQL 15 |
+| **Backend API** | Calculation & recommendation engine | 8000 | FastAPI, SQLAlchemy |
+| **Web UI** | User interface | 8080 | FastAPI frontend |
+| **Grafana** | Monitoring dashboards | 3001 | Grafana 10.4 |
+| **Cron Backup** | Automated DB backups | - | PostgreSQL + cron |
+
+### Technology stack
+
+- **Backend**: Python 3.11+, FastAPI, SQLAlchemy, asyncpg
+- **Database**: PostgreSQL 15 with extensions (pgcrypto, pg_trgm, uuid-ossp)
+- **Containerization**: Docker, Docker Compose
+- **ML/AI**: Optional integration with Mistral for personalized micro-stories (work in progress)
+- **Monitoring**: Grafana
+- **Security**: Docker secrets, encrypted passwords
+
+## Project structure
+
+```
+assistant-project/
+├── app/                          # Application sources
+│   ├── backend/                  # Backend API (FastAPI)
+│   │   ├── calculators/          # Biorhythms, psychomatrix, natal, jyotish
+│   │   ├── config/               # Configuration and settings
+│   │   ├── database/             # DB models and migrations
+│   │   ├── forecast/             # Forecasting / combination logic
+│   │   ├── magic/                # "Magic" profiles and derived traits
+│   │   ├── services/             # Business logic and orchestration
+│   │   ├── users/                # User management and profiles
+│   │   └── assistant_api.py      # Main API entrypoint
+│   ├── web/                      # Web interface
+│   │   ├── web_api.py            # Web API server
+│   │   ├── web_client.py         # Frontend client for backend calls
+│   │   └── __init__.py
+│   ├── requirements-*.txt        # Component dependencies
+│   └── Dockerfile.*              # Docker images for components
+├── docker-secrets/               # Docker secrets (auto-generated)
+├── initscripts/                  # DB initialization scripts
+│   └── init_db.sql
+├── monitoring/                   # Monitoring configuration
+├── scripts/                      # Utility scripts
+├── backups/                      # Generated DB backups
+├── docker-compose.yml            # Compose orchestration
+├── Makefile                      # Management commands
+├── bash_start.sh                 # Launch helper script
+└── README.md                     # This document
+```
+
+## Quick start
+
+### Prerequisites
+
+- Docker 20.10+
+- Docker Compose 2.0+
+- Make (recommended)
+- Minimum 4 GB RAM, 10 GB disk space
+
+### Installation
+
+```bash
+# Clone repository
+git clone <repository-url>
+cd assistant-project
+
+# Generate secrets and API keys
+make secrets
+
+# Initialize DB and start all services
+make up
+```
+
+### Alternative (manual)
+
+```bash
+make secrets
+docker compose up -d
+make status
+```
+
+### What `make up` does
+
+1. Generates secrets (DB password, API keys)
+2. Initializes the database (runs `initscripts/init_db.sql`)
+3. Starts all services under Docker
+4. Runs basic health checks
+
+## Management commands (Makefile)
+
+| Command | Description |
+|---------|-------------|
+| `make up` | Full start (secrets + init + services) |
+| `make down` | Stop all services (DB data preserved) |
+| `make status` | Show services and URLs |
+| `make validate` | Integrity checks for services and DB |
+| `make secrets` | Generate Docker secrets |
+| `make rotate-secrets` | Rotate secrets without downtime |
+| `make backup` | Create DB backup |
+| `make logs` | Stream all service logs |
+| `make logs-app` | Application logs only |
+| `make cron-setup` | Install scheduled cron jobs |
+
+## Service endpoints and access
+
+After start, services are available locally:
+
+| Service | URL | Default credentials |
+|---------|-----|---------------------|
+| **Grafana** (monitoring) | http://localhost:3001 | `admin` / `admin`* |
+| **Backend API docs** | http://localhost:8000/docs | API key required |
+| **Web UI** | http://localhost:8080 | Create account |
+| **PostgreSQL** | localhost:5432 | `postgres` / see secrets |
+
+> *Change Grafana password on first login*
+
+### API authentication
+
+All API requests require an API key header:
+```
+X-API-Key: <your_api_key>
+```
+
+The API key is generated by `make secrets` and stored in `docker-secrets/backend-api-key.txt`:
+```bash
+cat docker-secrets/backend-api-key.txt
+```
+
+### Core backend endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/user/profile` | Create or update user profile |
+| `GET` | `/api/v1/user/profile` | Retrieve profile |
+| `GET` | `/api/v1/user/validate` | Check profile completeness |
+| `POST` | `/api/v1/optimal-activities` | Compute optimal activities for a date |
+| `GET` | `/api/v1/activities/descriptions` | List activity descriptions |
+| `GET` | `/api/v1/forecast` | Daily forecast for given date |
+| `POST` | `/api/v1/forecast/feedback` | User feedback on forecast accuracy |
+
+## Database
+
+PostgreSQL 15 with the following main tables:
+
+**Core tables:**
+- `users` — User accounts
+- `user_profiles` — Extended user data
+- `natal_charts` — Astrological charts
+- `psyho_matrices` — Pythagorean squares
+- `biorhythms` — Cycle calculations
+- `magic_profiles` — Derived psychological profiles
+- `optimal_activities` — Activity recommendations
+- `recommendations` — Final daily recommendations
+- `psychological_tests` — Test results
+
+**Auxiliary tables:**
+- `daily_forecast_cache` — Cached predictions
+- `forecast_feedback` — User ratings
+- `system_audit_log` — Security audit trail
+- `calculation_cache` — Performance cache
+- `system_metrics` — Operational metrics
+
+**Initialization:** `initscripts/init_db.sql` creates tables, indices, views, and grants permissions at first run.
+
+## Monitoring & backups
+
+### Grafana dashboards
+
+Access at http://localhost:3001 with dashboards for:
+- **System metrics** — CPU, memory, disk
+- **DB metrics** — Connections, slow queries
+- **User metrics** — Active users, new signups
+- **ML metrics** — Model latency, errors
+
+### Backup strategy
+
+```bash
+# Manual backup
+make backup
+
+# Enable automated backups
+make cron-setup
+```
+
+**Schedule:**
+- Daily backups at 03:00
+- Weekly secret rotation at Sunday 04:00
+- Backups stored in `backups/` directory
+- 7-day retention policy by default
+
+## Security
+
+### Secrets management
+
+- Docker secrets store passwords and API keys
+- Files set to permission 600
+- Secrets auto-generated on first run
+
+```bash
+make secrets        # Generate fresh secrets
+make rotate-secrets # Rotate without downtime
+```
+
+### Production recommendations
+
+- ✅ Change Grafana default password after first login
+- ✅ Configure SSL/TLS with reverse proxy (Nginx, Traefik)
+- ✅ Block direct access to DB port (5432) from public network
+- ✅ Apply firewall rules
+- ✅ Keep base images updated
+- ✅ Audit dependencies regularly
+
+## Troubleshooting
+
+### Common issues and fixes
+
+| Issue | Solution |
+|-------|----------|
+| **Services won't start** | `make logs` to view logs<br>`docker compose ps` to check containers<br>`docker compose down && make up` to restart |
+| **DB connection errors** | `docker exec pa-postgres pg_isready`<br>`docker compose logs postgres` for details |
+| **API returns 401** | Verify API key: `cat docker-secrets/backend-api-key.txt`<br>Rotate secrets if needed |
+
+### Health checks
+
+```bash
+# Full system validation
+make validate
+
+# Individual health checks
+curl -f http://localhost:8000/health
+curl -f http://localhost:8080/health
+docker exec pa-postgres pg_isready
+```
+
+## System requirements
+
+| Environment | CPU | RAM | Disk | OS |
+|-------------|-----|-----|------|-----|
+| **Minimum** | 2 cores | 4 GB | 20 GB SSD | Linux, macOS, Windows (WSL2) |
+| **Recommended (production)** | 4 cores* | 8 GB | 50 GB SSD | Linux server |
+
+> *2 cores for DB, 2 cores for application
+
+Network: 100 Mbps recommended for production
+
+## Updating the project
+
+```bash
+# Stop services
+make down
+
+# Pull latest code
+git pull origin main
+
+# Rebuild images
+docker compose build --no-cache
+
+# Start fresh
+make up
+```
+
+## License
+
+**Author:** leostuchchi
+
+For open-source licensing, add a `LICENSE` file with your chosen license (e.g., MIT, Apache-2.0, or GPL-3.0).
+
+---
+
+## Support
+
+- 📖 **Documentation**: See this README
+- 🐛 **Issues**: [GitHub Issues](https://github.com/yourusername/daily-tuner/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/yourusername/daily-tuner/discussions)
+
+---
+
+**Made with ❤️ for better days**
+
+*Daily Tuner is an experimental tool. Use insights as guidance, not professional advice.*
+```
+
